@@ -1,5 +1,5 @@
 #!/bin/bash
-cd "$(dirname "$0")"
+cd "$(dirname "$0")" || exit
 
 SOURCE="http://mirrors.ustc.edu.cn/gnu/libc"
 GLIBC_DIR="/glibc"
@@ -17,7 +17,7 @@ fi
 
 
 die() {
-  echo >&2 $1
+  echo >&2 "$1"
   exit 1
 }
 
@@ -28,11 +28,11 @@ usage() {
 
 download(){
     local filename=$1
-    if [ ! -f srcs/$filename ]; then
+    if [ ! -f srcs/"$filename" ]; then
         wget "$SOURCE/$filename" -O "srcs/$filename"
     else
         echo "[?] srcs/$filename already exists. remove it to re-download. continue ? (y/[n])"
-        read opt
+        read -r opt
         if [ "$opt" = "y" ] || [ "$opt" = "Y" ]; then
             :
         else
@@ -44,21 +44,21 @@ download(){
 extract(){
     local filepath=$1
     local output_dir=$2
-    if [ ! -f $filepath ]; then
+    if [ ! -f "$filepath" ]; then
         die "[-] Invalid filepath: $filepath"
     fi
-    if [ ! -d $output_dir ]; then
+    if [ ! -d "$output_dir" ]; then
         echo "[*] Making directory $output_dir"
-        mkdir -p $output_dir
-        cp $filepath $output_dir/src.tar.gz
-        pushd $output_dir 1>/dev/null
+        mkdir -p "$output_dir"
+        cp "$filepath" "$output_dir"/src.tar.gz
+        pushd "$output_dir" 1>/dev/null || exit
         tar xf src.tar.gz
-        mv */* ./
+        mv ./*/* ./
         rm src.tar.gz
-        popd 1>/dev/null
+        popd 1>/dev/null || exit
     else
         echo "[?] Seems that source code exists in $output_dir. continue ? (y/[n])"
-        read opt
+        read -r opt
         if [ "$opt" = "y" ] || [ "$opt" = "Y" ]; then
             :
         else
@@ -71,20 +71,20 @@ build(){
     local arch=$1
     local src_dir=$2
     local output_dir=$3
-    if [ ! -d $src_dir ]; then
+    if [ ! -d "$src_dir" ]; then
         die "[-] Invalid src_dir: $src_dir"
     fi
-    if [ ! -d $output_dir ]; then
+    if [ ! -d "$output_dir" ]; then
         echo "[*] Making directory $output_dir"
-        mkdir -p $output_dir
+        mkdir -p "$output_dir"
     fi
-    pushd $src_dir 1>/dev/null
+    pushd "$src_dir" 1>/dev/null || exit
     mkdir build
-    cd build
-    if [ $arch = 'amd64' ]; then
-        ../configure --prefix=$output_dir --disable-werror --enable-debug=yes
-    elif [ $arch = 'i686' ]; then
-        ../configure --prefix=$output_dir --disable-werror --enable-debug=yes --host=i686-linux-gnu --build=i686-linux-gnu CC="gcc -m32" CXX="g++ -m32" 
+    cd build || exit
+    if [ "$arch" = 'amd64' ]; then
+        ../configure --prefix="$output_dir" --disable-werror --enable-debug=yes
+    elif [ "$arch" = 'i686' ]; then
+        ../configure --prefix="$output_dir" --disable-werror --enable-debug=yes --host=i686-linux-gnu --build=i686-linux-gnu CC="gcc -m32" CXX="g++ -m32"
     else
         die "[-] Invalid arch: $arch"
     fi
@@ -92,7 +92,7 @@ build(){
     make install
     cd ../
     rm -rf build
-    popd 1>/dev/null
+    popd 1>/dev/null || exit
 }
 
 
@@ -109,10 +109,10 @@ ARCH=$2
 SRC="glibc-$GLIBC_VERSION.tar.gz"
 
 echo "[*] downloading $SRC"
-download $SRC
+download "$SRC"
 SRC_DIR=$GLIBC_DIR/$GLIBC_VERSION/source
 echo "[*] extracting to $SRC_DIR"
-extract "srcs/$SRC" $SRC_DIR
+extract "srcs/$SRC" "$SRC_DIR"
 echo "[*] building..."
-build $ARCH $SRC_DIR $GLIBC_DIR/$GLIBC_VERSION/$ARCH/
+build "$ARCH" "$SRC_DIR" $GLIBC_DIR/"$GLIBC_VERSION"/"$ARCH"/
 echo "[+] build finished. check $GLIBC_DIR/$GLIBC_VERSION/$ARCH/"
