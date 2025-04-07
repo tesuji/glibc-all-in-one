@@ -1,0 +1,44 @@
+#!/usr/bin/env bash
+set -eu
+
+usage() {
+  echo >&2 "Usage: $0 <lib path>"
+  echo >&2 "Example: $0 libs/2.31/libc.so.6"
+  exit 2
+}
+
+if [[ $# != 1 ]]; then
+  usage
+fi
+
+path=$(realpath $1)
+dirp=$(dirname "$path")
+echo "path = $path"
+# echo "$dirp"
+
+# sanity check
+if file "$path" | grep -q debug_info; then
+	echo >&2 "file already has debug_info. quitting!"
+	exit 1
+fi
+
+bid=$(eu-readelf -n "$path" | awk '/Build ID/ {print $3}')
+echo "Build ID = $bid"
+
+if [[ ${#bid} -lt 40 ]]; then
+	echo >&2 "invalid buildid"
+	exit 1
+fi
+
+dbg_dir=$dirp/.debug/
+# echo "cmd: " find "$dbg_dir" -name "*"${bid:2:48}"*"
+dbgfile=$(find "$dbg_dir" -name "*"${bid:2:48}"*")
+echo "dbgfile = $dbgfile"
+
+if [[ -z $dbgfile ]]; then
+	echo >&2 "debuginfo not found"
+	exit 1
+fi
+
+eu-unstrip $path $dbgfile
+ln -f $dbgfile $path
