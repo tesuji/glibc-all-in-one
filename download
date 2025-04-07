@@ -13,7 +13,7 @@ fi
 
 SOURCE="https://mirror.tuna.tsinghua.edu.cn/ubuntu/pool/main/g/glibc"
 # Use the source below if you feel slow, or change it on your own.
-# SOURCE="http://archive.ubuntu.com/ubuntu/pool/main/g/glibc/"
+SOURCE2="http://archive.ubuntu.com/ubuntu/pool/main/g/glibc/"
 
 LIBC_PREFIX="libc6_"
 LIBC_DBG_PREFIX="libc6-dbg_"
@@ -24,7 +24,8 @@ die() {
 }
 
 usage() {
-  echo >&2 "Usage: $0 id"
+  echo >&2 "Usage: $0 [-a] id"
+  echo >&2 "Options: -o,--origin  fetch deb from ubuntu.com"
   exit 2
 }
 
@@ -60,7 +61,22 @@ download_single() {
   echo "  -> Package saved to libs/$id/.debug"
 }
 
-if [[ $# != 1 ]]; then
+if [[ $# -lt 1 ]]; then
   usage
 fi
+
+# Process all arguments
+while [[ $# -gt 1 ]]; do
+  case "$1" in
+    -o|--origin)
+      SOURCE="$SOURCE2"
+      shift 1
+      ;;
+    *)
+      echo >&2 "Unknown option: $1"
+      exit 1
+      ;;
+  esac
+done
+
 download_single "$1"
