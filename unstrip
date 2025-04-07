@@ -30,7 +30,7 @@ if [[ ${#bid} -lt 40 ]]; then
     exit 1
 fi
 
-dbg_dir=$dirp/.debug/
+dbg_dir=$dirp/
 # echo "cmd: " find "$dbg_dir" -name "*"${bid:2:48}"*"
 dbgfile=$(find "$dbg_dir" -name "*""${bid:2:48}""*")
 echo "dbgfile = $dbgfile"
