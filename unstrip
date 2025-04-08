@@ -11,6 +11,10 @@ if [[ $# != 1 ]]; then
   usage
 fi
 
+get_buildid() {
+    eu-readelf -n "$1" | awk '/Build ID/ {print $3}'
+}
+
 path=$(realpath "$1")
 dirp=$(dirname "$path")
 echo "path = $path"
@@ -22,7 +26,7 @@ if file "$path" | grep -q debug_info; then
     exit 1
 fi
 
-bid=$(eu-readelf -n "$path" | awk '/Build ID/ {print $3}')
+bid=$(get_buildid "$path")
 echo "Build ID = $bid"
 
 if [[ ${#bid} -lt 40 ]]; then
@@ -30,13 +34,24 @@ if [[ ${#bid} -lt 40 ]]; then
     exit 1
 fi
 
-dbg_dir=$dirp/
-# echo "cmd: " find "$dbg_dir" -name "*"${bid:2:48}"*"
+dbg_dir=$dirp
 dbgfile=$(find "$dbg_dir" -name "*""${bid:2:48}""*")
-echo "dbgfile = $dbgfile"
 
 if [[ -z $dbgfile ]]; then
-    echo >&2 "debuginfo not found"
+    echo >&2 "debuginfo not found in $dbg_dir"
+    echo >&2 "Falling back to search for old glibc 2.27 or below.."
+    candidate=$(find "$dbg_dir"/.debug/lib -name "*$(basename "$path")*")
+    if [[ -z $candidate ]]; then
+        echo >&2 "fall back failed."
+        exit 1
+    fi
+    dbgfile=$candidate
+fi
+echo "dbgfile = $dbgfile"
+
+bid2=$(get_buildid "$dbgfile")
+if [[ -z $bid2 ]]; then
+    echo >&2 "buildid doesn't match: $bid != $bid2"
     exit 1
 fi
 
