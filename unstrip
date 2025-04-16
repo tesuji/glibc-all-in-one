@@ -40,7 +40,11 @@ dbgfile=$(find "$dbg_dir" -name "*""${bid:2:48}""*")
 if [[ -z $dbgfile ]]; then
     echo >&2 "debuginfo not found in $dbg_dir"
     echo >&2 "Falling back to search for old glibc 2.27 or below.."
-    candidate=$(find "$dbg_dir"/.debug/lib -name "*$(basename "$path")*")
+    fallback_dbgdir="$dbg_dir"/.debug
+    if [[ ! -d "$fallback_dbgdir" ]]; then
+        fallback_dbgdir="$dbg_dir"/lib
+    fi
+    candidate=$(find "$fallback_dbgdir" -name "*$(basename "$path")*")
     if [[ -z $candidate ]]; then
         echo >&2 "fall back failed."
         exit 1
