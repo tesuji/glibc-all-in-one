@@ -15,6 +15,8 @@ SOURCE="https://mirror.tuna.tsinghua.edu.cn/ubuntu/pool/main/g/glibc"
 # Use the source below if you feel slow, or change it on your own.
 SOURCE2="http://archive.ubuntu.com/ubuntu/pool/main/g/glibc/"
 
+OLD_SOURCE="http://old-releases.ubuntu.com/ubuntu/pool/main/g/glibc"
+
 LIBC_PREFIX="libc6_"
 LIBC_DBG_PREFIX="libc6-dbg_"
 
@@ -70,6 +72,10 @@ while [[ $# -gt 1 ]]; do
   case "$1" in
     -o|--origin)
       SOURCE="$SOURCE2"
+      shift 1
+      ;;
+    -d|--old)
+      SOURCE="$OLD_SOURCE"
       shift 1
       ;;
     *)

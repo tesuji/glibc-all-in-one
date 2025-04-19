@@ -49,7 +49,7 @@ check supported packages. remember to run `update_list` at first.
 
 download. 
 
-__Note__: use `download` for packages in the `list`; use `download_old` for packages in the `old_list`.
+__Note__: use `download` for packages in the `list`; use `download --old` for packages in the `old_list`.
 
 ```
 ➜  glibc-all-in-one ./download 2.23-0ubuntu10_i386
@@ -69,7 +69,7 @@ ld-2.23.so  libc-2.23.so   ......
 ```
 
 ```
-➜  glibc-all-in-one ./download_old 2.24-3ubuntu2.2_amd64
+➜  glibc-all-in-one ./download --old 2.24-3ubuntu2.2_amd64
 ......
 ```
 
