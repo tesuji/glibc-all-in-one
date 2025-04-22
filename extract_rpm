@@ -1,0 +1,59 @@
+#!/bin/bash
+# could use libcdb to find the package name and use rpmfind to get the download url.
+cd "$(dirname "$0")" || exit
+
+die() {
+  echo >&2 "$1"
+  exit 1
+}
+
+usage() {
+  echo -e >&2 "Usage: $0 rpm output"
+  exit 2
+}
+
+extract() {
+    local rpm=$(readlink -f "$1")
+    local out=$2
+    if [ ! -d "$out" ]; then
+        mkdir "$out"
+    fi
+    local tmp=$(mktemp -d)
+
+    pushd "$tmp" >/dev/null || die "pushd failed"
+    7z x "$rpm" >/dev/null || die "7z failed"
+
+    zstd_ar=$(echo *.cpio.zstd)
+    if [[ -f "$zstd_ar" ]]; then
+        if ! command -v unzstd > /dev/null; then
+            echo >&2 "This script needs unzstd program installed."
+            exit 1
+        fi
+        unzstd "$zstd_ar" || die "unzstd failed"
+    fi
+
+    cpio_ar=$(echo *.cpio)
+    [[ -f "$cpio_ar" ]] || die "*.cpio file is not existed"
+
+    7z x "$cpio_ar" >/dev/null || die "7z *.cpio failed"
+    popd > /dev/null || die "popd failed"
+
+    echo >&2 "copying files from $tmp ..."
+    find "$tmp/lib64" -type f -exec cp -rP -t "$out" {} + || die "cp failed"
+    #find "$tmp/lib32" -type f -exec cp -rP -t "$out" {} + || die "cp failed"
+    find "$tmp/usr/lib64" -type f -exec cp -rP -t "$out" {} + || die "cp failed"
+
+    cp -rP -t "$out" "$tmp"/usr/lib/.build-id 2>/dev/null || die "cp failed"
+    rm -rf "$tmp"
+}
+
+if [[ $# -ne 2 ]]; then
+    usage
+fi
+
+if ! command -v 7z > /dev/null; then
+    echo >&2 "This script needs 7z program installed."
+    exit 1
+fi
+
+extract "$1" "$2"
